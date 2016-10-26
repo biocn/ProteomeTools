@@ -1,2 +1,13 @@
 eclipse.preferences.version=1
-encoding//com/zlf/domain/FileOpertor.py=utf-8
+encoding//com/zlf/beans/Global.py=utf-8
+encoding//com/zlf/domain/EnrichmentOpertor.py=utf-8
+encoding//com/zlf/domain/GoOpertor.py=utf-8
+encoding//com/zlf/domain/SearchResult.py=utf-8
+encoding//com/zlf/domain/net/Cello.py=utf-8
+encoding//com/zlf/domain/net/KAAS.py=utf-8
+encoding//com/zlf/domain/net/REVIGO.py=utf-8
+encoding//com/zlf/domain/report/ReportLabels.py=utf-8
+encoding//com/zlf/domain/report/ReportTemplate.py=utf-8
+encoding//com/zlf/domain/utils/FileOpertor.py=utf-8
+encoding//com/zlf/ui/Trans_Protein_Report.py=utf-8
+encoding//com/zlf/ui/iTRAQ_Report.py=utf-8

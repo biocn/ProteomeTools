@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
+#!/usr/bin/python
 '''
-Created on 2016年10月23日
+Created on 2016年10月26日
 
 @author: Administrator
 '''
