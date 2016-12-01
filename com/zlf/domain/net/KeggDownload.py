@@ -4,12 +4,14 @@ Created on 2016-5-16
 @author: Administrator
 '''
 
+from HTMLParser import HTMLParser
 import cookielib
 import re
 import urllib
 import urllib2
 
 from com.zlf.beans.Global import _KEGGFolder
+
 
 def getHtml(url):
     page = urllib.urlopen(url)
@@ -106,27 +108,62 @@ def getPathwayList(osa):
         if line.find('path')==0:
             _list.append(line[line.find(osa)+len(osa):line.find(osa)+len(osa)+5])
     return _list
+
+class MyHTMLParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.isTable=''
+        self.h4=''
+        self.b=''
+        self.tmp=''
+        self._as=[]
+        self._map={}
+    def handle_starttag(self,tag,attrs):
+        if tag=='table':
+            for name,value in attrs:
+                if name=='width' and value=='658':
+                    self.isTable=1
+        if tag=='a' and self.isTable==1:
+            for name,value in attrs:
+                if name=='href':
+                    if value.find('show_pathway?')>0:
+                        self._as.append(value)
+    def handle_endtag(self, tag):
+        if tag=='table' and self.isTable==1:
+            if self._map.has_key(self.h4):
+                self._map[self.h4].append((self.b,self._as)) 
+            else:
+                self._map[self.h4]=[(self.b,self._as)] 
+            self._as=[]
+            self.b=''
+            self.isTable=''
+        if self.isTable=='' and tag=='h4':
+            self.h4=self.tmp
+        if self.isTable=='' and tag=='b':
+            self.b=self.tmp
+            
+    def handle_data(self, data):
+        self.tmp=data
+#         if self.isTable==1:
+#             self._list.append(data.rstrip(' ').lstrip(' ').rstrip('\n').lstrip('\n').rstrip('\t').lstrip('\t').rstrip(' ').lstrip(' '))
+    
+    def getMap(self):
+        _map1={}
+        for key in self._map:
+            for ls in self._map[key]:
+                _list=[]
+                for l in ls[1]:
+                    ko=l[l.find('show_pathway?')+13:len(l)]
+                    if ko.find('=')>-1:
+                        ko=ko[ko.find('=')+1:len(ko)]
+                    if ko.find('&')>-1:
+                        ko=ko[0:ko.find('&')]
+                    _list.append('map'+ko[-5:len(ko)])
+                _list=list(set(_list))
+                for k in _list:
+                    _map1[k]=(key[key.find(' ')+1:len(key)],ls[0][ls[0].find(' ')+1:len(ls[0])])
+        return _map1
         
 if __name__ == '__main__':
-    _maps=parseMapPathway()
-    flag=None
-    _mapKO={}
-    for _map in _maps:
-        html = getHtml("http://rest.kegg.jp/link/ko/"+_map)
-        _list=getKOList(html)
-        for ko in _list:
-            if _mapKO.has_key(ko):
-                _mapKO[ko].append(_map)
-            else:
-                _mapKO[ko]=[_map]
-    f=open(_KEGGFolder+'/KO2Map.txt','w')
-    for key in _mapKO:
-        f.write(key+'\t')
-        for pathway in _mapKO[key]:
-            f.write(pathway+';')
-        f.write('\n')
-    f.close()
-    
-    
-    
+    pass
     

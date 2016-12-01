@@ -9,9 +9,14 @@ from os.path import os
 import types
 import shutil
 
+def mkdir(_path):
+    try:
+        os.makedirs(_path)
+    except:
+        pass
 
 def getLines(_path):
-    f=open(_path)
+    f=open(_path,'r')
     lines=f.readlines()
     f.close()
     return lines    
@@ -110,7 +115,32 @@ def copyImage(p1,p2):
     except:
         pass
     return copyFile(p1+'.pdf', p2+'.pdf')    
-    
+
+def getCommonList(list1,list2):
+    return list(set(list1).intersection(set(list2)))  
+
+def getLineDatas(_path):
+    lines=getLines(_path)
+    _list=[]
+    for line in lines:
+        _list.append(line.rstrip().lstrip().rstrip('\n').rstrip('\r'))
+    return _list
+
+def writeLines(lines,_path):
+    fw=open(_path,'w')
+    for line in lines:
+        fw.write(line+'\n')
+    fw.close()
+def writeMatrix(lines,_path):
+    fw=open(_path,'w')
+    for cols in lines:
+        line=''
+        for col in cols:
+            line=line+'\t'+str(col)
+        fw.write(line[1:len(line)]+'\n')
+    fw.close()
+
+
 if __name__ == '__main__':
     folder='E:/Work/MH/MH-B16061603/ProteinTrans'
     mergeTable(folder+'/Rep1/ProteinExprossion.txt', [1,10,11,12,13,14,15],

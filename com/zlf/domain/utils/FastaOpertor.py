@@ -60,9 +60,9 @@ def readFasta(_path):
     return _map
 
 if __name__ == '__main__':
-    folder='E:/Work/MH/MH-B16061603/ProteinTrans'
-    _fastaPath=folder+'/uniprot-taxonomy_380703.fasta'
-    f=open(folder+'/mappingProtein.txt','r')
+    folder='E:/Work/P1/MG005/Proteome'
+    _fastaPath=folder+'/uniprot-organism_4081.fasta'
+    f=open(folder+'/MergeAll.txt','r')
     f.readline()
     line=f.readline()
     _list=[]
@@ -70,6 +70,6 @@ if __name__ == '__main__':
         _list.append(line.lstrip().rstrip('\n').split('\t')[0])
         line=f.readline()
     f.close()
-    outFastaByKey(set(_list), _fastaPath, folder+'/trans_protein_taxonomy_380703.fasta')
+    outFastaByKey(set(_list), _fastaPath, folder+'/identify.fasta')
     
     pass

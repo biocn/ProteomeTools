@@ -6,6 +6,8 @@ Created on 2016-5-21
 from numpy.random.mtrand import np
 
 from com.zlf.beans.Global import _funPath, _wogPath, _kogPath, _cogPath
+from com.zlf.domain.utils.FastaOpertor import extractProteinID
+from com.zlf.domain.utils.FileOpertor import getDataMatrix
 
 
 def parseFun():
@@ -111,6 +113,23 @@ def getMappingForKOG():
 
 def getMappingForCOG():
     return parseKOG(_cogPath)
+
+def parseBlastByM8(_path,outPath):
+    matrix=getDataMatrix(_path)[0];
+    _map={}
+    for cols in matrix:
+        key=extractProteinID(cols[0])
+        if _map.has_key(key):
+            if _map[key][1]<float(cols[2]):
+                _map[key]=(extractProteinID(cols[1]),float(cols[2]))
+        else:
+            _map[key]=(extractProteinID(cols[1]),float(cols[2]))
+    if outPath:
+        f=open(outPath,'w')
+        for key in _map:
+            f.write(key+"\t"+_map[key][0]+'\t'+str(_map[key][1])+'\n')
+        f.close()
+    return _map;  
 
 def parseM8(m8Path):
     mapp=np.loadtxt(m8Path,dtype=np.str)[:,(0,1,2)]

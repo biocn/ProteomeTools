@@ -6,10 +6,12 @@ Created on 2016-8-3
 '''
 import os
 
-from com.zlf.domain.utils.FisherTest import fisherTestPvalue
 from com.zlf.domain.KeggOpertor import proteinMappingPathway, getKoMap, \
     getKEGGPathData, plotPathway
+from com.zlf.domain.utils.FileOpertor import getDataMatrix, getMapByData
+from com.zlf.domain.utils.FisherTest import fisherTestPvalue
 import pandas as pd
+from matplotlib.pyplot import flag
 
 
 #获取带-的修饰位点中的蛋白ID
@@ -140,44 +142,83 @@ def writeCategory(_frame,outPath):
         fw1.write(str(_frame['FisherExact'][i])+'\t'+str(_frame['MappingProteinIDs'][i])+'\n')
     fw.close()
     fw1.close()
+
+def getDomainData(path):
+    data=getDataMatrix(path)[0]
+    _mapIterm={}
+    dataLength=0
+    for i in range(len(data)):
+        if len(data[i])>1 and data[i][1]!='':
+            dataLength=dataLength+1
+            gos=data[i][1].split(';')
+            goDescs=data[i][2].split(';')
+            for j in range(len(gos)):
+                iterm=(gos[j]+'~'+goDescs[j].lstrip('"').rstrip('"'))
+                if _mapIterm.has_key(iterm):
+                    _mapIterm[iterm].append(data[i][0])
+                else:
+                    _mapIterm[iterm]=[data[i][0]]
+    return {'iterms':_mapIterm,'Num':dataLength,'data':data}
+
+def DomainEnrichment(genes,bgPath,outPath,full=1):
+    domain=getDomainData(bgPath)
+    data=domain['data']
+    dataLength=domain['Num']
+    _mapIterm=domain['iterms']
+    _setUP=set(genes)
+    allMappingUp=0
+    for pro in range(len(data)):
+        if data[pro][0] in _setUP:
+            allMappingUp=allMappingUp+1
+    
+    upFrame=getDataFrame(_mapIterm, _setUP, dataLength, allMappingUp, full)
+    writeCategory(upFrame.sort_values(['FisherExact']),outPath)    
     
     
-    
-def KEGGEnrichment(genesUp,genesDown,folder,outFolder,full=1):
-    kpdt=getKEGGPathData(folder)
+def KEGGEnrichment(genes,bgPath,outFolder,full=1,colors=None):
+    kpdt=getKEGGPathData(bgPath)
     _mapIterm=kpdt['iterms']
     dataLength=kpdt['Num']
     data=kpdt['data']
     allMappingAll=0
     allMappingUp=0
-    allMappingDown=0
     _colorMap={}
-    _setUP=set(genesUp)
-    _setDown=set(genesDown)
-    for pro in range(len(data[0])):
-        if data[0][pro] in _setUP:
+    _geneMap={}
+    _kosMap={}
+    for i in range(len(genes)):
+        if colors:
+            _geneMap[genes[i]]=colors[i]
+        else:
+            _geneMap[genes[i]]='red'
+    for pro in range(len(data)):
+        if _geneMap.has_key(data[pro][0]):
             allMappingUp=allMappingUp+1
             allMappingAll=allMappingAll+1
-            _colorMap[data[1][pro]]='red'
-        elif data[0][pro] in _setDown:
-            allMappingAll=allMappingAll+1
-            allMappingDown=allMappingDown+1
-            _colorMap[data[1][pro]]='green'
+            if _colorMap.has_key(data[pro][1]):
+                _colorMap[data[pro][1]].append(_geneMap[data[pro][0]])
+            else:
+                _colorMap[data[pro][1]]=[_geneMap[data[pro][0]]]
+            if _kosMap.has_key(data[pro][1]):
+                _kosMap[data[pro][1]].append('Protein:'+data[pro][0]+' ColorStage-'+_geneMap[data[pro][0]])
+            else:
+                _kosMap[data[pro][1]]=['Protein:'+data[pro][0]+' ColorStage-'+_geneMap[data[pro][0]]]
         else:
-            _colorMap[data[1][pro]]='blue'
-    upFrame=getDataFrame(_mapIterm, _setUP, dataLength, allMappingUp, full)
-    downFrame=getDataFrame(_mapIterm, _setDown, dataLength, allMappingDown, full)
-    allFrame=getDataFrame(_mapIterm, _setUP | _setDown, dataLength, allMappingAll, full)
+            if _colorMap.has_key(data[pro][1]):
+                _colorMap[data[pro][1]].append('blue')
+            else:
+                _colorMap[data[pro][1]]=['blue']
+            if _kosMap.has_key(data[pro][1]):
+                _kosMap[data[pro][1]].append('Protein:'+data[pro][0]+' ColorStage-blue')
+            else:
+                _kosMap[data[pro][1]]=['Protein:'+data[pro][0]+' ColorStage-blue']
+                
+    upFrame=getDataFrame(_mapIterm, set(genes), dataLength, allMappingUp, full)
     try:
-        os.makedirs(outFolder)
+        os.makedirs(outFolder+'_KEGG_PATH')
     except:
         pass
-    writeCategory(upFrame.sort_values(['FisherExact']),outFolder+'/Up_KEGG_Enrich.txt')
-    writeCategory(downFrame.sort_values(['FisherExact']),outFolder+'/Down_KEGG_Enrich.txt')
-    writeCategory(allFrame.sort_values(['FisherExact']),outFolder+'/All_KEGG_Enrich.txt')
-    plotPathway(upFrame, _colorMap, outFolder+'/UP_Regulated')
-    plotPathway(downFrame, _colorMap, outFolder+'/Down_Regulated')
-    plotPathway(allFrame, _colorMap, outFolder+'/All_Regulated')
+    writeCategory(upFrame.sort_values(['FisherExact']),outFolder+'_KEGG_Enrich.txt')
+    plotPathway(upFrame, _colorMap, outFolder+'_KEGG_PATH',_kosMap)
 
 def getDataFrame(_mapIterm,_set,dataLength,allMapping,full):
     bg=[]
@@ -227,6 +268,59 @@ def getKeyAndSites(_paths,header=True):
         _list.extend(getKeyAndSite(_path, header))
     return _list    
 
+def getGOData(path):
+    data=getDataMatrix(path)[0]
+    _mapIterm={}
+    for i in range(len(data)):
+        gos=data[i][1].split(';')
+        goDescs=data[i][2].split(';')
+        for j in range(len(gos)):
+            iterm=(gos[j]+'~'+goDescs[j].lstrip('"').rstrip('"'))
+            if _mapIterm.has_key(iterm):
+                _mapIterm[iterm].append(data[i][0])
+            else:
+                _mapIterm[iterm]=[data[i][0]]
+    return {'iterms':_mapIterm,'data':data}
+
+#GO富集，bgGOPath需要自己构建无表头共四列【ID，GOID，GODesc，Level】
+def GOEnrichment(genes,bgGOPath,outPath,full=1):
+    goData=getGOData(bgGOPath)
+    data=goData['data']
+    _mapIterm=goData['iterms']
+    _set=set(genes)
+    allMappingAll=0
+    for pro in data:
+        if pro[0] in _set:
+            allMappingAll=allMappingAll+1
+    allFrame=getDataFrame(_mapIterm, _set, len(data), allMappingAll, full)
+    writeCategory(allFrame.sort_values(['FisherExact']),outPath)
+
+def getEnrichmenResultData(_path):
+    _data=getDataMatrix(_path)[0]
+    return getMapByData(_data, 0,False)
+
+def mergeEnrichmentResultData(_list):
+    _keys=[]
+    for _map in _list:
+        _keys.extend(list(_map.iterkeys()))
+    allList={}
+    for key in _keys:
+        _pValues=[]
+        flag=True
+        _id=''
+        for _map in _list:
+            if _map.has_key(key):
+                p=float(_map[key][7])
+                if p<0.05:
+                    _id=_map[key][1]
+                    flag=False
+                _pValues.append(str(p))
+            else:
+                _pValues.append('1')
+        if not flag:
+            _pValues.insert(0, _id)
+            allList[key]=_pValues
+    return allList
 if __name__ == '__main__':
     folder='E:/Work/MH/MH-B16072601/ClusterMethod3'
 #     EnrichGO(folder)

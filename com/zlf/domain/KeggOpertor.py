@@ -8,12 +8,34 @@ import shutil
 
 from PIL import Image
 
-from com.zlf.domain.net.KeggDownload import getPathwayList
-import pandas as pd
 from com.zlf.beans.Global import _KEGGFolder
+from com.zlf.domain.net.KeggDownload import getPathwayList
+from com.zlf.domain.utils.FileOpertor import getDataMatrix
 
 
+def getKO2Protein(prot_koPath):
+    f=open(prot_koPath,'r')
+    lines=f.readlines()
+    f.close()
+    _map={}
+    for line in lines:
+        cols=line.rstrip().lstrip('\n').split('\t')
+        if len(cols)>1 and cols[1].find('K')==0:
+            _map[cols[0]]=cols[1]
+    return _map
 
+def getKEGGLevel(level=None):
+    f=open(_KEGGFolder+'/pathway.txt','r')
+    lines=f.readlines()
+    f.close()
+    _map={}
+    for line in lines:
+        cols=line.lstrip().rstrip('\n').split('\t')
+        if level:
+            _map[cols[0]]=cols[3]
+        else:
+            _map[cols[0]]=cols[2]
+    return _map
 def getConf(path):
     f=open(path,'r')
     _all=f.readlines()
@@ -29,35 +51,24 @@ def getConf(path):
 def getColor(kos,colors):
     _kos=kos.split(',')
     _color={}
-    _red=None
-    _green=None
-    _blue=None
-    _yellow=None
+    _cos=[]
     for ko in _kos:
         if colors.has_key(ko):
-            if colors[ko]=='yellow':
-                _yellow=colors[ko]
-            elif colors[ko]!='blue':
-                if not _red and (not _green or _green!=colors[ko]):
-                    _red=colors[ko]
-                elif _red and not _green and _red!=colors[ko]:
-                    _green=colors[ko]
-            else:
-                _blue=colors[ko]
-    if _yellow:
-        return ['red','green']
-    if _red:
-        if _green:
-            return [_red,_green]
-        else:
-            return [_red]
-    elif _green:
-        return [_green]
-    elif _blue:
-        return [_blue]
+            _cos.extend(colors[ko])
+    if len(_cos)>0:
+        _c='blue'
+        for i in range(len(_cos)):
+            if _cos[i]!='blue' and _c=='blue':
+                _c=_cos[i]
+            elif _cos[i]!='blue' and _c!='blue' and _c!=_cos[i]:    
+                _c='yellow'
+                break
+        if _c=='yellow':
+            return ['red','green']
+        return [_c]
     return None
 
-def plotPathway(_frame,_colorMap,folder):
+def plotPathway(_frame,_colorMap,folder,kosMap):
     for i in _frame.index:
         if _frame['FisherExact'][i]<0.05:
             koPath=_frame['Category'][i][0:_frame['Category'][i].find('~')]
@@ -67,7 +78,7 @@ def plotPathway(_frame,_colorMap,folder):
                 os.makedirs(folder+'/img')
             except:
                 pass
-            copyPathwayHtml(koPath,folder)
+            copyPathwayHtml(koPath,folder,kosMap)
             saveImg(koPath, _colorMap,folder+"/img/"+koPath+'.png')
             
             
@@ -165,7 +176,7 @@ def getPathwayDesc():
     f.close()
     _map={}
     for line in lines:
-        cols=line.rstrip().lstrip('\n').split('\t')
+        cols=line.lstrip().rstrip('\n').split('\t')
         _map[cols[0]]=cols[1]
     return _map
 
@@ -190,36 +201,66 @@ def proteinMappingPathway(prot_koList,koMap,outPath,osas=None):
             pathDescAll=''
             for m in _list:
                 pathAll=pathAll+m+';'
-#                 print m
                 pathDescAll=pathDescAll+_pathDescMap[m]+';'
             fw.write('\t'+pathAll+'\t'+pathDescAll+'\n')
         else:
             fw.write('\n')
     fw.close()
 
-def copyPathwayHtml(_koName,_outFolder):
-    shutil.copy(_KEGGFolder+'/'+_koName+'.html',_outFolder+'/'+_koName+'.html')  
+def copyPathwayHtml(_koName,_outFolder,kosMap):
+    if kosMap:
+        f=open(_KEGGFolder+'/'+_koName+'.html','r')
+        lines=f.readlines();
+        f.close()
+        fw=open(_outFolder+'/'+_koName+'.html','w')
+        for line in lines:
+            if line.find('<script language="JavaScript">')==0:
+                fw.write(line+'\n')
+                fw.write("function moveIn(txt){\ndocument.getElementById('proteinTips').innerHTML = '<p>'+txt+'</p>';\n")
+                fw.write("document.getElementById('proteinTips').style.display = 'block';}\n")
+                fw.write("function moveOut(){\ndocument.getElementById('proteinTips').style.display = 'none';}\n")
+            elif line.find('<body>')==0:
+                fw.write(line+'\n')
+                fw.write('<div id="proteinTips" style="position:fixed; top:0; left: 0;min-width: 300px; min-height: 100px; background: #fff;border:1px solid #0f0;padding:10px;display:None">')
+                fw.write('\n</div>\n')
+            elif line.find('<area')>-1 and line.find('shape=rect')>-1 and line.find('href="')>-1:
+                line1=line[line.find('href="')+6:len(line)]
+                line1=line1[line1.find('?')+1:line1.find('"')]
+                kos=line1.split('+')
+                txt=''
+                for ko in kos:
+                    if kosMap.has_key(ko.rstrip().lstrip()):
+                        txt=txt+'<br/>'.join(kosMap[ko.rstrip().lstrip()])+'<br/>'
+                if txt=='':
+                    fw.write(line)
+                else:
+                    fw.write(line[0:line.find('coords=')])
+                    fw.write('onmouseover="moveIn(\''+txt+'\')" onmouseout="moveOut()" ')
+                    fw.write(line[line.find('coords='):len(line)])
+            else:
+                fw.write(line)
+        fw.close()
+    else:
+        shutil.copy(_KEGGFolder+'/'+_koName+'.html',_outFolder+'/'+_koName+'.html')  
 
-
-def getKEGGPathData(folder):
-    data=pd.read_table(folder+'/KEGG_Paths.txt',header=-1,error_bad_lines=False)
-    data=data.fillna('NA')
-#     print data[3]
-    data=data[(data[3]!='NA')]
+def getKEGGPathData(_bgPath):
+    data=getDataMatrix(_bgPath)[0]
     _mapIterm={}
     dataLength=0
-    for i in range(len(data[0:len(data)])):
-        if data.iloc[i][2]>0:
+    data1=[]
+    for i in range(len(data)):
+        if len(data[i])>2 and data[i][2]!='':
             dataLength=dataLength+1
-            gos=data.iloc[i][2].split(';')
-            goDescs=data.iloc[i][3].split(';')
+            gos=data[i][2].split(';')
+            goDescs=data[i][3].split(';')
             for j in range(len(gos)):
                 iterm=(gos[j]+'~'+goDescs[j].lstrip('"').rstrip('"'))
                 if _mapIterm.has_key(iterm):
-                    _mapIterm[iterm].append(data.iloc[i][0])
+                    _mapIterm[iterm].append(data[i][0])
                 else:
-                    _mapIterm[iterm]=[data.iloc[i][0]]
-    return {'data':data,'Num':dataLength,'iterms':_mapIterm}
+                    _mapIterm[iterm]=[data[i][0]]
+            data1.append(data[i])
+    return {'data':data1,'Num':dataLength,'iterms':_mapIterm}
 
 # def postKAAS(_path):
     
@@ -232,8 +273,11 @@ if __name__ == '__main__':
 #     _colors['K01899']='green'
 #     _colors['K01900']='red'
 #     saveImg("map00020", _colors, keggPathFolder+"test/map00020_1.png")
-    folder='E:/Work/MH/MH-T16052203/New'
+#     folder='E:/Work/MH/MH-T16052203/New'
 #     proteinMappingPathway(folder+'/query.ko.txt',getKoMap(), folder+'/KEGG_Paths.txt', 'mmu') 
+#     text=getHtml('http://www.kegg.jp/kegg/pathway.html')
+#     parser=MyHTMLParser()
+#     parser.feed(text)
+#     _query=parser.getMap()
     pass
-
 

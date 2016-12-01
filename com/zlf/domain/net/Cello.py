@@ -127,8 +127,8 @@ def postCello(_fasta,gram):
     return _lines
 #http://cello.life.nctu.edu.tw/cgi/main.cgi
 if __name__ == '__main__':
-    _lines=postCello('E:/Work/MH/MH-B16061603/ProteinTrans/identify.fasta', False)
-    fw=open('E:/Work/MH/MH-B16061603/ProteinTrans/worf.clear','w')
+    _lines=postCello('E:/Work/MH/MHT16A/identify.fasta', False)
+    fw=open('E:/Work/MH/MHT16A/worf.clear','w')
     fw.write('\n'.join(_lines))
     fw.close()
 

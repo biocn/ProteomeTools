@@ -1,9 +1,9 @@
 # -*- coding:utf-8 -*-
-from __main__ import time
 from os.path import os
 import sys
-
+import time
 import requests
+from com.zlf.domain.utils.FileOpertor import getLines
 
 
 reload(sys)
@@ -47,7 +47,7 @@ def getRData(text):
                 if not start and line[i:i+1]==',':
                     if col.find('(')==-1 and col.find(')')>0:
                         col=col[0:col.find(')')]
-                    l.append(col.rstrip('"').lstrip('"').rstrip('\n').rstrip('\r'))
+                    l.append(clear(col.rstrip('"').lstrip('"').rstrip('\n').rstrip('\r')))
                     col=''
                 else:
                     col=col+line[i:i+1]
@@ -58,14 +58,33 @@ def getRData(text):
             if col!='' and col!='\n' and col!='\r':
                 if col.find('(')==-1 and col.find(')')>0:
                     col=col[0:col.find(')')]
-                l.append(col.rstrip('"').lstrip('"').rstrip('\n').rstrip('\r'))
+                l.append(clear(col.rstrip('"').lstrip('"').rstrip('\n').rstrip('\r')))
             txt=txt+'\t'.join(l)+'\n'
     return txt
 
+def clear(_str):
+    if _str.count('\n')>0:
+        _str=_str[0:_str.find('\n')]
+    if _str.count('\r')>0:
+        _str=_str[0:_str.find('\r')]
+    _str=_str.lstrip().rstrip()    
+    while _str.count('(')<_str.count(')'):
+        _str=_str[0:_str.rfind(')')]
+    while _str.count('(')>_str.count(')'):
+        _str=_str[_str.find('(')+1:len(_str)]
+    _str=_str.lstrip().rstrip()    
+    while _str.find('"')==0 and _str.rfind('"')==len(_str)-1:
+        _str=_str[1:len(str)-1]
+    while _str.count('"')%2==1 and _str.rfind('"')==len(_str)-1:
+        _str=_str[0:len(str)-1]
+    while _str.count('"')%2==1 and _str.find('"')==0:
+        _str=_str[1:len(str)]
+    return _str
 #提交数据到REVIGO
 def postAndSaveR(folder,enricName):
     if os.path.exists(folder+'/'+enricName+'.treemap.txt') and os.path.exists(folder+'/'+enricName+'.base.txt') and os.path.exists(folder+'/'+enricName+'.xgmml'):
-        return
+        if len(getLines(folder+'/'+enricName+'.treemap.txt'))==len(getLines(folder+'/'+enricName+'.base.txt')):
+            return
     postData=getPostHeader(folder+'/'+enricName+'.txt')
     if postData:
         _session = requests.Session()

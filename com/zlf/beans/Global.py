@@ -17,5 +17,6 @@ _cogPath='E:/Work/MH/BgData/whog'
 _funPath='E:/Work/MH/BgData/fun.txt'
 
 
+
 if __name__ == '__main__':
     pass

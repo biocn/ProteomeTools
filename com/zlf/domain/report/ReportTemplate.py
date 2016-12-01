@@ -49,7 +49,7 @@ def getHtmlFooter():
     line=line+'<div class="text-center"><p>版权所有：牟合（上海）生物科技有限公司</p>'
     line=line+'<p>公司地址：上海市横泰经济开发区富民支路58号</p>'
     line=line+'<ul class="list-inline list-unstyled">'
-    line=line+'<li>Tel:400-600-3186</li>'
+#     line=line+'<li>Tel:400-600-3186</li>'
     line=line+'<li>Fax:021-50610115</li>'
     #line=line+'<li>Tel:400-600-3186</li>'
     line=line+'<li>E-mail:<a href="mailto:tech@mhelix.cn">tech@mhelix.cn</a></li>'
@@ -59,7 +59,7 @@ def getHtmlFooter():
     line=line+'</ul>'
     line=line+'</div>'
     line=line+'</footer>'
-    line=line+'<div id="goTop"><a title="Top" class="backtotop"><img src="src/images/goTop.jpg" class="back-tip" />'
+    line=line+'<div id="goTop"><a title="Top" class="backtotop"><img src="src/imgs/goTop.png" class="back-tip" />'
     line=line+'</a>'
     line=line+'</div>'
     line=line+'</div>'
@@ -93,7 +93,7 @@ def getHtmlHeader(title):
     line=line+'<script src="src/js/scrolltop.js" type="text/javascript"></script>'
     line=line+'</head>'
     line=line+'<body><title>'+title+'</title>'
-    line=line+'<div class="container shadow"><header><img src="src/images/logo.jpg" class="pull-right" />'
+    line=line+'<div class="container shadow"><header><img src="src/imgs/logo.jpg" class="pull-right" />'
     line=line+'</header>'
     line=line+'<div class="row"><div role="main" class="col-md-9"><header><h2 id="title" class="text-center">'+title+'</h2>'
     line=line+'</header>'
@@ -117,7 +117,7 @@ def getTitleMHtml(txt,_id):
     return '<h4 id="'+_id+'" class="title-h4">'+txt+'</h4>'
 #获取小标题的Html
 def getTitleHtml(txt,_id):
-    return '<h5 id="'+_id+'" class="title-h5">'+_id+'</h5>'
+    return '<h5 id="'+_id+'" class="title-h5">'+txt+'</h5>'
 #获取文本的html
 def getTxtHtml(txt):
     return '<p class="paragraph">'+txt+'</p>'
@@ -136,11 +136,12 @@ def getImagesHtml(imgs):
     line=line+'<ul class="slider-relative">'
     for img in imgs:
         line=line+'<li class="slide"><a title="'+img[0]+'" href="'+img[1]+'" class="img-toggle">'
-        line=line+'<img src="'+img[1]+'" />'
+        line=line+'<img src="'+img[1]+'" alt="'+img[2]+'"/>'
         line=line+'</a>'
         line=line+'</li>'
     line=line+'</ul>'
     line=line+'</div>'
+    return line
 
 #生成图片的html
 def getImageHtml(title,alt,url):
@@ -149,16 +150,21 @@ def getImageHtml(title,alt,url):
     line=line+'<img src="'+url+'" alt="'+alt+'" class="img-width-max" />'
     line=line+'</a>'
     line=line+'</p>'
+    
     return line
 
 #生成表格的html
 def getTableHtml(header,tables):
     line='<div class="table-responsive">'
     line=line+'<table class="table table-bordered table-hover table-striped"><thead>'
-    line=line+'<tr class="bg-info"><th>'+'</th><th>'.join(header)+'</th></tr></thead>'
-    line=line+'<tbody>'
-    for tr in tables:
-        line=line+'<tr><td>'+'</td><td>'.join(tr)+'<td></tr>'
+    line=line+'<tr class="tbHeader"><th>'+'</th><th>'.join(header)+'</th></tr></thead>'
+    line=line+'<tbody style="word-break: break-all;">'
+    for i in range(len(tables)):
+        tr=tables[i]
+        if i%2==1:
+            line=line+'<tr style="word-break: break-all;" class="tbFlow"><td>'+'</td><td>'.join(tr[0:len(header)])+'</td></tr>'
+        else:
+            line=line+'<tr style="word-break: break-all;"><td>'+'</td><td>'.join(tr[0:len(header)])+'</td></tr>'
     line=line+'</tbody></table></div>'
     return line
 
@@ -173,10 +179,14 @@ def getTableTemplateHtml(title,tableResponsive,table,header=None):
         line=line.replace('BioccResponsive',tableResponsive)
         _list.append(line)
     if header:
-        _list.append('<thead><tr class="bg-info"><th>'+'</th><th>'.join(header)+'</th></tr></thead>')
-    _list.append('<tbody>')
-    for cols in table:
-        _list.append('<tr><td>'+'</td><td>'.join(cols)+'</td></tr>')
+        _list.append('<thead><tr class="tbHeader"><th>'+'</th><th>'.join(header)+'</th></tr></thead>')
+    _list.append('<tbody style="word-break: break-all;">')
+    for i in range(len(table)):
+        cols=table[i]
+        if i%2==1:
+            _list.append('<tr style="word-break: break-all;" class="tbFlow"><td>'+'</td><td>'.join(cols)+'</td></tr>')
+        else:
+            _list.append('<tr style="word-break: break-all;"><td>'+'</td><td>'.join(cols)+'</td></tr>')
     _list.append('</tbody></table></body></html>')
     return '\n'.join(_list)
 

@@ -10,9 +10,10 @@ from HTMLParser import HTMLParser
 import requests
 
 from com.zlf.beans.Global import _AminoSet, _NucleSet
-from comcom.zlf.domain.utils.FileOpertorport getLines
+from com.zlf.domain.utils.FileOpertor import getLines
 import urllib2
 from os.path import os
+from com.zlf.domain.utils.FastaOpertor import extractProteinID
 
 #解析KAAS结果页面
 class MyHTMLParser(HTMLParser):
@@ -98,11 +99,7 @@ def getQueryKO(folder,reversedInd):
         for line in content.split('\n'):
             cols=line.split('\t')
             if len(cols)==2:
-                if cols[0].count('|')==2:
-                    cols[0]=cols[0][cols[0].find('|')+1:len(cols[0])]
-                    cols[0]=cols[0][0:cols[0].find('|')]
-                elif cols[0].count('|')==1:
-                    cols[0]=cols[0][cols[0].find('|')+1:len(cols[0])]
+                cols[0]=extractProteinID(cols[0])
                 fw.write(cols[0]+'\t'+cols[1]+'\n')
         fw.close()
         return True
@@ -120,6 +117,7 @@ def postKAAS(_fasta,orgs='mmu,hsa'):
         print 'post fail'
 
 if __name__ == '__main__':
+    
 #     postKAAS('E:/Work/MH/MH-B16061603/ProteinTrans/identify.fasta', 'aha')
     pass
 
