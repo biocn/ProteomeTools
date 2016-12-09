@@ -66,7 +66,6 @@ def getBackGround(_path,header=True,ind=None):
     f.close()
     return _map
 
-
     
 #创建KEGG富集背景
 def createKEGGBg(proteinList,folder,prot_koPath,osas):
@@ -97,7 +96,6 @@ def createDomainBgByIPR(proteinList,folder,iprPath):
                 iprsDesc=iprsDesc+dt.iloc[i][12]+';'
             fw.write(pro+'\t'+iprs+'\t'+iprsDesc+'\n')
     fw.close()
-
 
 #创建Domain富集背景
 def createDomainBg(proteinList,folder,_path,header=True):
@@ -173,7 +171,6 @@ def DomainEnrichment(genes,bgPath,outPath,full=1):
     
     upFrame=getDataFrame(_mapIterm, _setUP, dataLength, allMappingUp, full)
     writeCategory(upFrame.sort_values(['FisherExact']),outPath)    
-    
     
 def KEGGEnrichment(genes,bgPath,outFolder,full=1,colors=None):
     kpdt=getKEGGPathData(bgPath)
@@ -260,7 +257,6 @@ def getDataFrame(_mapIterm,_set,dataLength,allMapping,full):
                   'IdentifyProteinIDs':bgDtail,
                   'MappingProteinIDs':mpDtailUp
                   })
-
 
 def getKeyAndSites(_paths,header=True):
     _list=[]
